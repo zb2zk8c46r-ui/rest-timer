@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>每周训练控制台 V4</title>
+<style>
+:root{
+  --ink:#111827;--muted:#64748b;--glass:rgba(255,255,255,.78);--line:rgba(255,255,255,.72);
+  --purple:#7c3aed;--pink:#ec4899;--blue:#0ea5e9;--green:#22c55e;--orange:#f97316;--red:#ef4444;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{
+  margin:0;min-height:100vh;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","PingFang SC","Microsoft YaHei",sans-serif;
+  color:var(--ink);padding:14px;
+  background:
+    radial-gradient(circle at 5% 10%, rgba(124,58,237,.42), transparent 26%),
+    radial-gradient(circle at 48% 0%, rgba(236,72,153,.30), transparent 24%),
+    radial-gradient(circle at 95% 8%, rgba(251,191,36,.36), transparent 26%),
+    radial-gradient(circle at 0% 100%, rgba(14,165,233,.40), transparent 30%),
+    radial-gradient(circle at 95% 95%, rgba(34,197,94,.28), transparent 25%),
+    #f8fafc;
+}
+.app{
+  width:min(1280px,100%);min-height:620px;margin:0 auto;padding:18px;border-radius:32px;
+  background:rgba(255,255,255,.42);backdrop-filter:blur(24px);box-shadow:0 20px 60px rgba(55,65,130,.20);
+  display:grid;grid-template-columns:220px 1fr 310px;gap:16px;
+}
+.card{background:var(--glass);border:1px solid var(--line);border-radius:26px;box-shadow:0 10px 30px rgba(15,23,42,.07)}
+.left{padding:18px;display:flex;flex-direction:column;gap:12px}
+.brand h1{font-size:22px;margin:0 0 4px;letter-spacing:-.05em}.brand p{margin:0;color:var(--muted);font-size:13px}
+.daybtn{
+  border:0;border-radius:18px;padding:13px 14px;text-align:left;background:rgba(255,255,255,.66);
+  cursor:pointer;color:var(--ink);display:flex;justify-content:space-between;align-items:center;font-weight:800;
+}
+.daybtn small{display:block;font-weight:600;color:var(--muted);margin-top:3px}
+.daybtn.active{color:white;background:linear-gradient(135deg,#7c3aed,#ec4899);box-shadow:0 10px 22px rgba(124,58,237,.25)}
+.daybtn.active small{color:rgba(255,255,255,.82)}
+.main{padding:18px;display:grid;grid-template-rows:auto 1fr auto;gap:14px}
+.toprow{display:flex;justify-content:space-between;gap:12px;align-items:center}
+.titlebox h2{margin:0;font-size:28px;letter-spacing:-.06em}.titlebox p{margin:6px 0 0;color:var(--muted)}
+.sound{display:flex;align-items:center;gap:9px;color:var(--muted);font-size:13px}
+.switch{width:46px;height:27px;border-radius:999px;background:#cbd5e1;position:relative;cursor:pointer}
+.switch:after{content:"";position:absolute;width:23px;height:23px;left:2px;top:2px;background:white;border-radius:50%;transition:.2s}
+.switch.on{background:#22c55e}.switch.on:after{left:21px}
+.center{display:grid;grid-template-columns:1fr 260px;gap:16px;align-items:stretch}
+.exerciseList{padding:14px;overflow:auto;max-height:405px}
+.exitem{
+  display:grid;grid-template-columns:28px 1fr auto;gap:10px;align-items:center;
+  padding:12px;border-radius:17px;background:rgba(255,255,255,.62);margin-bottom:9px;cursor:pointer;
+}
+.exitem.active{background:linear-gradient(135deg,rgba(124,58,237,.18),rgba(236,72,153,.14));outline:2px solid rgba(124,58,237,.18)}
+.exitem.done{opacity:.55}
+.check{width:24px;height:24px;border-radius:7px;border:2px solid #94a3b8;display:grid;place-items:center;font-size:14px;color:white}
+.exitem.done .check{background:#22c55e;border-color:#22c55e}
+.exname{font-weight:900}.exmeta{font-size:12px;color:var(--muted);margin-top:3px}.rest{font-weight:900;color:#6d28d9}
+.timerPanel{padding:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative}
+.timerwrap{position:relative;width:210px;height:210px}
+svg{width:100%;height:100%;transform:rotate(-90deg)}circle{fill:none;stroke-linecap:round}.track{stroke:rgba(15,23,42,.08);stroke-width:12}.ring{stroke:url(#grad);stroke-width:12;transition:stroke-dashoffset .18s linear}
+.time{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:52px;font-weight:900;letter-spacing:-.07em;font-variant-numeric:tabular-nums}
+.voice{position:absolute;left:0;right:0;bottom:42px;text-align:center;color:#6d28d9;font-size:14px;font-weight:900}
+.controls{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;width:100%;margin-top:14px}
+.ctrl{border:0;border-radius:16px;padding:12px 10px;color:white;font-weight:900;cursor:pointer}
+.start{background:linear-gradient(135deg,#7c3aed,#ec4899)}.next{background:linear-gradient(135deg,#06b6d4,#22c55e)}.reset{background:linear-gradient(135deg,#f97316,#facc15)}.pause{background:linear-gradient(135deg,#0ea5e9,#2563eb)}
+.bottom{padding:14px 16px;border-radius:22px;background:rgba(255,255,255,.62)}
+.row{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.bar{height:18px;border-radius:999px;background:rgba(15,23,42,.08);overflow:hidden}.fill{height:100%;width:0%;border-radius:999px;background:linear-gradient(90deg,#7c3aed,#ec4899,#f97316,#22c55e);transition:.35s}
+.right{padding:18px;display:grid;gap:12px}
+.stat{background:rgba(255,255,255,.64);border-radius:19px;padding:14px 15px;display:flex;justify-content:space-between;align-items:center}.stat span{color:var(--muted);font-weight:700}.stat b{font-size:20px}
+.sets{padding:15px;background:rgba(255,255,255,.64);border-radius:20px}.sets h3,.tip h3{margin:0 0 10px}.setgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.setdot{height:36px;border-radius:12px;background:#e2e8f0;display:grid;place-items:center;font-weight:900;color:#64748b}.setdot.done{background:#22c55e;color:white}
+.tip{padding:15px;background:radial-gradient(circle at 95% 95%,rgba(251,191,36,.35),transparent 35%),rgba(255,255,255,.64);border-radius:20px}.tip p{margin:0;color:var(--muted);line-height:1.55;font-size:14px}
+.clear{border:0;border-radius:18px;padding:13px;color:#ef4444;background:rgba(255,255,255,.72);font-weight:900;cursor:pointer}
+@media(max-width:980px){.app{grid-template-columns:1fr}.center{grid-template-columns:1fr}.right{grid-template-columns:1fr 1fr}.timerPanel{min-height:280px}}
+@media(max-width:560px){body{padding:8px}.app{padding:10px;border-radius:22px}.right{grid-template-columns:1fr}.toprow{flex-direction:column;align-items:flex-start}.timerwrap{width:190px;height:190px}.time{font-size:46px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="card left">
+    <div class="brand"><h1>🏋️ 每周训练</h1><p>三栏式训练控制台</p></div>
+    <div id="dayList"></div>
+  </aside>
+
+  <main class="card main">
+    <div class="toprow">
+      <div class="titlebox"><h2 id="dayTitle">周一（上肢A）</h2><p id="daySub">大动作90秒，小动作60秒</p></div>
+      <div class="sound">语音提示 <div class="switch on" id="soundSwitch" onclick="toggleSound()"></div></div>
+    </div>
+
+    <div class="center">
+      <section class="exerciseList" id="exerciseList"></section>
+      <section class="card timerPanel">
+        <div class="timerwrap">
+          <svg viewBox="0 0 120 120">
+            <defs><linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#7c3aed"/><stop offset="35%" stop-color="#ec4899"/><stop offset="70%" stop-color="#0ea5e9"/><stop offset="100%" stop-color="#22c55e"/></linearGradient></defs>
+            <circle class="track" cx="60" cy="60" r="50"></circle><circle class="ring" id="ring" cx="60" cy="60" r="50"></circle>
+          </svg>
+          <div class="time" id="time">01:30</div>
+          <div class="voice" id="voiceText">准备开始</div>
+        </div>
+        <div class="controls">
+          <button class="ctrl start" id="startBtn" onclick="toggleTimer()">开始</button>
+          <button class="ctrl next" onclick="completeSet()">下一组</button>
+          <button class="ctrl pause" onclick="nextExercise()">下一动作</button>
+          <button class="ctrl reset" onclick="resetTimer()">重置</button>
+        </div>
+      </section>
+    </div>
+
+    <div class="bottom">
+      <div class="row"><b>今日完成率</b><span id="progressText">0%</span></div>
+      <div class="bar"><div class="fill" id="fill"></div></div>
+    </div>
+  </main>
+
+  <aside class="card right">
+    <div class="stat"><span>当前动作</span><b id="currentName">上斜哑铃卧推</b></div>
+    <div class="stat"><span>休息时间</span><b id="restShow">90秒</b></div>
+    <div class="stat"><span>训练时长</span><b id="minutes">0分钟</b></div>
+    <div class="stat"><span>下一动作</span><b id="nextName">平板哑铃卧推</b></div>
+
+    <div class="sets">
+      <h3>当前动作组数</h3>
+      <div class="setgrid" id="setGrid"></div>
+    </div>
+
+    <div class="tip">
+      <h3>💡 提醒</h3>
+      <p id="tipText">按顺序完成动作。大动作恢复足够，小动作保持节奏。</p>
+    </div>
+
+    <button class="clear" onclick="clearToday()">清空今日记录</button>
+  </aside>
+</div>
+
+<script>
+const plan = [
+  {day:"周一", name:"上肢A", sub:"组间休息：60–90秒（大动作90秒，小动作60秒）", items:[
+    ["上斜哑铃卧推","4×12",90,4],["平板哑铃卧推","3×12",90,3],["单臂哑铃划船","4×12",90,4],["哑铃拉蹬划船","3×15",60,3],["哑铃肩推","4×12",90,4],["侧平举","6×15",60,6],["反向飞鸟","5×15",60,5],["椭圆机","30分钟",0,1]
+  ]},
+  {day:"周二", name:"下肢A", sub:"组间休息：60–90秒（大动作90秒，小动作60秒）", items:[
+    ["高脚杯深蹲","4×15",90,4],["罗马尼亚硬拉","4×12",90,4],["保加利亚蹲","4×12",90,4],["壶铃摆动","4×20",60,4],["平板支撑","4×40秒",60,4],["鸟狗式","3×15",60,3],["椭圆机","30分钟",0,1]
+  ]},
+  {day:"周三", name:"有氧", sub:"心率130–145，步数8000+", items:[
+    ["椭圆机","60分钟",0,1],["心率","130–145",0,1],["步数","8000+",0,1]
+  ]},
+  {day:"周四", name:"上肢B", sub:"组间休息：60–90秒（大动作90秒，小动作60秒）", items:[
+    ["上斜哑铃卧推","4×10",90,4],["哑铃飞鸟","3×15",60,3],["单臂哑铃划船","4×10",90,4],["反向飞鸟","4×15",60,4],["侧平举","8×15",60,8],["阿诺德推举","4×12",90,4],["反向飞鸟","4×15",60,4],["椭圆机","30分钟",0,1]
+  ]},
+  {day:"周五", name:"下肢B", sub:"组间休息：60–90秒（大动作90秒，小动作60秒）", items:[
+    ["高脚杯深蹲","4×15",90,4],["罗马尼亚硬拉","4×12",90,4],["保加利亚蹲","3×12",90,3],["壶铃摆动","5×20",60,5],["平板支撑","4×60秒",60,4],["死虫式","3×15",60,3],["椭圆机","30分钟",0,1]
+  ]},
+  {day:"周六", name:"长有氧", sub:"长有氧日", items:[
+    ["椭圆机","90分钟",0,1],["可拆分","45分钟 + 45分钟",0,1]
+  ]},
+  {day:"周日", name:"恢复", sub:"恢复日", items:[
+    ["散步","8000步以上",0,1],["拉伸","10分钟",0,1],["靠墙站立","3分钟",0,1]
+  ]}
+];
+
+const todayIndex = (new Date().getDay()+6)%7;
+let currentDay = Number(localStorage.getItem("v4_day") ?? todayIndex);
+let currentEx = Number(localStorage.getItem("v4_ex") ?? 0);
+let selected = 90, remaining = 90, running = false, timer = null, lastSecond = 90, audioCtx = null, soundEnabled = true;
+let startSession = Date.now();
+const radius=50,circumference=2*Math.PI*radius,ring=document.getElementById("ring");
+ring.style.strokeDasharray=circumference;
+
+function key(){return `v4_${currentDay}_${currentEx}`}
+function getDoneSets(){return Number(localStorage.getItem(key())||0)}
+function setDoneSets(n){localStorage.setItem(key(), String(n))}
+function totalSetsForDay(d=currentDay){return plan[d].items.reduce((a,x)=>a+x[3],0)}
+function doneSetsForDay(d=currentDay){return plan[d].items.reduce((a,x,i)=>a+Number(localStorage.getItem(`v4_${d}_${i}`)||0),0)}
+function currentItem(){return plan[currentDay].items[currentEx]}
+
+function renderDays(){
+  const wrap=document.getElementById("dayList"); wrap.innerHTML="";
+  plan.forEach((d,i)=>{
+    const b=document.createElement("button");
+    b.className="daybtn"+(i===currentDay?" active":"");
+    b.innerHTML=`<span>${d.day}<small>${d.name}</small></span><b>${Math.round(doneSetsForDay(i)/totalSetsForDay(i)*100)||0}%</b>`;
+    b.onclick=()=>selectDay(i);
+    wrap.appendChild(b);
+  });
+}
+function renderExercises(){
+  const wrap=document.getElementById("exerciseList"); wrap.innerHTML="";
+  plan[currentDay].items.forEach((it,i)=>{
+    const done=Number(localStorage.getItem(`v4_${currentDay}_${i}`)||0);
+    const div=document.createElement("div");
+    div.className="exitem"+(i===currentEx?" active":"")+(done>=it[3]?" done":"");
+    div.onclick=()=>selectExercise(i);
+    div.innerHTML=`<span class="check">${done>=it[3]?"✓":""}</span><span><div class="exname">${it[0]}</div><div class="exmeta">${it[1]} · 已完成 ${done}/${it[3]}组</div></span><span class="rest">${it[2]?it[2]+"s":"完成"}</span>`;
+    wrap.appendChild(div);
+  });
+}
+function initAudio(){if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)(); if(audioCtx.state==="suspended")audioCtx.resume()}
+function speak(text){
+  document.getElementById("voiceText").textContent=text;
+  if(!soundEnabled||!("speechSynthesis"in window))return;
+  window.speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(text); u.lang="zh-CN"; u.rate=.92; u.pitch=1.02; u.volume=1;
+  const voices=window.speechSynthesis.getVoices(); const zh=voices.find(v=>v.lang.includes("zh")||v.name.includes("Chinese")||v.name.includes("中文")); if(zh)u.voice=zh;
+  window.speechSynthesis.speak(u);
+}
+if("speechSynthesis"in window) window.speechSynthesis.onvoiceschanged=()=>window.speechSynthesis.getVoices();
+function beep(freq=760,duration=.08,volume=.08){
+  if(!soundEnabled||!audioCtx)return;
+  const osc=audioCtx.createOscillator(),gain=audioCtx.createGain(); osc.type="sine"; osc.frequency.value=freq;
+  gain.gain.setValueAtTime(.0001,audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(volume,audioCtx.currentTime+.012); gain.gain.exponentialRampToValueAtTime(.0001,audioCtx.currentTime+duration);
+  osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime+duration);
+}
+function bell(){
+  if(!soundEnabled)return; initAudio();
+  [[880,0,.16,.16],[1175,.20,.16,.16],[1568,.40,.48,.17]].forEach(([f,s,d,v])=>{
+    const osc=audioCtx.createOscillator(),gain=audioCtx.createGain(); osc.type="sine"; osc.frequency.setValueAtTime(f,audioCtx.currentTime+s);
+    gain.gain.setValueAtTime(.0001,audioCtx.currentTime+s); gain.gain.exponentialRampToValueAtTime(v,audioCtx.currentTime+s+.015); gain.gain.exponentialRampToValueAtTime(.0001,audioCtx.currentTime+s+d);
+    osc.connect(gain); gain.connect(audioCtx.destination); osc.start(audioCtx.currentTime+s); osc.stop(audioCtx.currentTime+s+d);
+  });
+  setTimeout(()=>speak("开始下一组"),650);
+  if(navigator.vibrate) navigator.vibrate([180,80,180]);
+}
+function coachCue(sec){
+  const elapsed=selected-sec;
+  if(selected<=60){if(elapsed===20)speak("调整呼吸"); if(elapsed===40)speak("准备下一组")}
+  else{if(elapsed===30)speak("调整呼吸"); if(elapsed===60)speak("准备下一组")}
+  if(sec===10)speak("还有十秒"); if(sec===5)speak("还有五秒"); if(sec===3)speak("三"); if(sec===2)speak("二"); if(sec===1)speak("一");
+  if(sec<=10&&sec>0){if(sec>5)beep(650,.07,.055);else if(sec>2){beep(820,.08,.075);setTimeout(()=>beep(820,.05,.055),130)}else{beep(980,.08,.095);setTimeout(()=>beep(980,.05,.075),120);setTimeout(()=>beep(980,.05,.075),240)}}
+}
+function selectDay(i){currentDay=i;currentEx=0;localStorage.setItem("v4_day",i);localStorage.setItem("v4_ex",0);stopTimer();setupFromCurrent();renderAll()}
+function selectExercise(i){currentEx=i;localStorage.setItem("v4_ex",i);stopTimer();setupFromCurrent();renderAll()}
+function setupFromCurrent(){const it=currentItem(); selected=it[2]||0; remaining=selected; lastSecond=selected}
+function stopTimer(){running=false;clearInterval(timer);document.getElementById("startBtn").textContent="开始"; if("speechSynthesis"in window)window.speechSynthesis.cancel()}
+function toggleSound(){soundEnabled=!soundEnabled;document.getElementById("soundSwitch").classList.toggle("on",soundEnabled); if(!soundEnabled&&"speechSynthesis"in window)window.speechSynthesis.cancel()}
+function toggleTimer(){
+  const it=currentItem();
+  if(!it[2]){completeSet();return}
+  initAudio();
+  if(running){running=false;clearInterval(timer);document.getElementById("startBtn").textContent="继续";return}
+  running=true;lastSecond=remaining;document.getElementById("startBtn").textContent="暂停";speak("开始休息");
+  const startTime=Date.now(),base=remaining;
+  clearInterval(timer);
+  timer=setInterval(()=>{
+    const elapsed=Math.floor((Date.now()-startTime)/1000); remaining=Math.max(base-elapsed,0);
+    if(remaining!==lastSecond){lastSecond=remaining;coachCue(remaining)}
+    renderAll(false);
+    if(remaining<=0){clearInterval(timer);running=false;document.getElementById("startBtn").textContent="开始";bell();completeSet(false)}
+  },100);
+}
+function completeSet(withSound=true){
+  const it=currentItem(); let done=getDoneSets();
+  if(done<it[3]) setDoneSets(done+1);
+  if(withSound && it[2]) bell();
+  if(getDoneSets()>=it[3]) setTimeout(()=>nextExercise(),300);
+  else {remaining=selected;lastSecond=selected}
+  renderAll();
+}
+function nextExercise(){
+  stopTimer();
+  if(currentEx<plan[currentDay].items.length-1) currentEx++;
+  localStorage.setItem("v4_ex",currentEx);
+  setupFromCurrent(); renderAll();
+}
+function resetTimer(){stopTimer();setupFromCurrent();renderAll()}
+function clearToday(){plan[currentDay].items.forEach((_,i)=>localStorage.setItem(`v4_${currentDay}_${i}`,0));currentEx=0;localStorage.setItem("v4_ex",0);setupFromCurrent();renderAll()}
+function format(sec){if(!sec)return"完成";const m=String(Math.floor(sec/60)).padStart(2,"0"),s=String(sec%60).padStart(2,"0");return `${m}:${s}`}
+function renderSetGrid(){
+  const it=currentItem(), done=getDoneSets(), wrap=document.getElementById("setGrid"); wrap.innerHTML="";
+  for(let i=1;i<=it[3];i++){const d=document.createElement("div");d.className="setdot"+(i<=done?" done":"");d.textContent=i;wrap.appendChild(d)}
+}
+function renderAll(full=true){
+  const day=plan[currentDay], it=currentItem(), next=day.items[currentEx+1];
+  document.getElementById("dayTitle").textContent=`${day.day}（${day.name}）`;
+  document.getElementById("daySub").textContent=day.sub;
+  document.getElementById("currentName").textContent=it[0];
+  document.getElementById("nextName").textContent=next?next[0]:"今日完成";
+  document.getElementById("restShow").textContent=it[2]?`${it[2]}秒`:"无需计时";
+  document.getElementById("time").textContent=format(remaining);
+  document.getElementById("minutes").textContent=Math.floor((Date.now()-startSession)/60000)+"分钟";
+  const pct=Math.round(doneSetsForDay()/totalSetsForDay()*100)||0;
+  document.getElementById("fill").style.width=pct+"%"; document.getElementById("progressText").textContent=pct+"%";
+  ring.style.strokeDashoffset= selected ? circumference*(1-remaining/selected) : circumference;
+  document.getElementById("tipText").textContent= it[2] ? "做完一组后按“下一组”，系统会自动记录进度。" : "有氧或恢复项目完成后，直接点“下一组”记录完成。";
+  if(!running) document.getElementById("voiceText").textContent= it[2] ? "准备开始" : "完成后点下一组";
+  renderSetGrid();
+  if(full){renderDays();renderExercises()}
+}
+setupFromCurrent();renderAll();setInterval(()=>renderAll(false),30000);
+</script>
+</body>
+</html>
