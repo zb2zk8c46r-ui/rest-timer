@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>组间休息倒计时｜Notion组件</title>
+<style>
+:root{
+  --bg:#000;
+  --text:#fff;
+  --muted:#8e8e93;
+  --orange:#ff9500;
+  --green:#30d158;
+  --gray:#2c2c2e;
+  --ring:#1c1c1e;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{
+  margin:0;
+  min-height:100vh;
+  color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","PingFang SC","Microsoft YaHei",sans-serif;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:
+    radial-gradient(circle at 50% 5%, rgba(255,149,0,.12), transparent 34%),
+    radial-gradient(circle at 50% 85%, rgba(48,209,88,.08), transparent 36%),
+    #000;
+}
+.app{
+  width:min(440px,100vw);
+  min-height:100vh;
+  padding:34px 20px 24px;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+}
+.top{text-align:center}
+.title{font-size:19px;font-weight:600;margin-bottom:6px;color:#f5f5f7}
+.sub{color:var(--muted);font-size:13px;margin-bottom:18px}
+.modes{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:10px;
+  margin-bottom:14px;
+}
+.chip{
+  border:none;
+  border-radius:999px;
+  padding:10px 14px;
+  font-size:16px;
+  background:var(--gray);
+  color:#fff;
+  cursor:pointer;
+}
+.chip.active{
+  color:var(--orange);
+  background:rgba(255,149,0,.16);
+}
+.actions{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:8px;
+  margin-bottom:20px;
+}
+.action{
+  border:none;
+  border-radius:16px;
+  padding:10px 8px;
+  font-size:14px;
+  background:#151517;
+  color:#d1d1d6;
+  cursor:pointer;
+}
+.action.active{
+  color:#fff;
+  background:rgba(255,149,0,.20);
+}
+.timer-wrap{
+  position:relative;
+  width:min(320px,78vw);
+  height:min(320px,78vw);
+  margin:0 auto;
+}
+svg{transform:rotate(-90deg);width:100%;height:100%}
+circle{fill:none;stroke-width:7;stroke-linecap:round}
+.track{stroke:var(--ring)}
+.progress{stroke:var(--orange);transition:stroke-dashoffset .2s linear}
+.time{
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:66px;
+  font-weight:200;
+  letter-spacing:-4px;
+  font-variant-numeric:tabular-nums;
+}
+.voice{
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:72px;
+  text-align:center;
+  color:#f5f5f7;
+  font-size:19px;
+  font-weight:500;
+}
+.status{text-align:center;color:var(--muted);margin-top:18px;font-size:14px}
+.phase{text-align:center;color:#f5f5f7;margin-top:7px;font-size:17px;font-weight:500}
+.controls{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:20px 10px 12px;
+}
+.round{
+  width:76px;
+  height:76px;
+  border-radius:50%;
+  border:2px solid #000;
+  font-size:17px;
+  cursor:pointer;
+}
+.reset{background:#1c1c1e;color:#fff}
+.start{background:rgba(48,209,88,.18);color:var(--green)}
+.pause{background:rgba(255,149,0,.18);color:var(--orange)}
+.sound-row{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:10px;
+  color:var(--muted);
+  font-size:13px;
+  margin-top:2px;
+}
+.switch{
+  width:46px;
+  height:27px;
+  border-radius:999px;
+  background:#3a3a3c;
+  position:relative;
+  cursor:pointer;
+}
+.switch::after{
+  content:"";
+  position:absolute;
+  width:23px;
+  height:23px;
+  border-radius:50%;
+  background:white;
+  left:2px;
+  top:2px;
+  transition:.2s;
+}
+.switch.on{background:var(--green)}
+.switch.on::after{left:21px}
+.hint{text-align:center;color:#6e6e73;font-size:12px;line-height:1.45;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top">
+    <div class="title">组间休息</div>
+    <div class="sub">宽肩 / 薄背训练用｜Notion 嵌入组件</div>
+
+    <div class="modes">
+      <button class="chip active" id="mode60" onclick="selectDuration(60)">60 秒</button>
+      <button class="chip" id="mode90" onclick="selectDuration(90)">90 秒</button>
+    </div>
+
+    <div class="actions">
+      <button class="action" onclick="selectAction('上斜卧推',90)">上斜卧推 90s</button>
+      <button class="action" onclick="selectAction('单臂划船',90)">单臂划船 90s</button>
+      <button class="action" onclick="selectAction('侧平举',60)">侧平举 60s</button>
+      <button class="action" onclick="selectAction('反向飞鸟',60)">反向飞鸟 60s</button>
+    </div>
+
+    <div class="timer-wrap">
+      <svg viewBox="0 0 120 120">
+        <circle class="track" cx="60" cy="60" r="54"></circle>
+        <circle class="progress" id="progress" cx="60" cy="60" r="54"></circle>
+      </svg>
+      <div class="time" id="time">01:00</div>
+      <div class="voice" id="voiceText">准备</div>
+    </div>
+
+    <div class="status" id="status">准备开始</div>
+    <div class="phase" id="phase">选择 60 秒或 90 秒</div>
+
+    <div class="sound-row">
+      <span>语音 + 提示音</span>
+      <div class="switch on" id="soundSwitch" onclick="toggleSound()"></div>
+    </div>
+  </div>
+
+  <div>
+    <div class="controls">
+      <button class="round reset" onclick="resetTimer()">重置</button>
+      <button class="round start" id="startBtn" onclick="toggleTimer()">开始</button>
+    </div>
+    <div class="hint">提示：在 Notion / Safari 中需要先点“开始”，声音才会播放。</div>
+  </div>
+</div>
+
+<script>
+let selected = 60;
+let remaining = 60;
+let running = false;
+let timer = null;
+let lastSecond = remaining;
+let audioCtx = null;
+let soundEnabled = true;
+let currentAction = "";
+
+const radius = 54;
+const circumference = 2 * Math.PI * radius;
+const progress = document.getElementById("progress");
+progress.style.strokeDasharray = circumference;
+progress.style.strokeDashoffset = 0;
+
+function initAudio(){
+  if(!audioCtx){
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if(audioCtx.state === "suspended") audioCtx.resume();
+}
+
+function speak(text){
+  if(!soundEnabled || !("speechSynthesis" in window)) return;
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = "zh-CN";
+  u.rate = 0.92;
+  u.pitch = 1.02;
+  u.volume = 1;
+  const voices = window.speechSynthesis.getVoices();
+  const zhVoice = voices.find(v => v.lang.includes("zh") || v.name.includes("Chinese") || v.name.includes("中文"));
+  if(zhVoice) u.voice = zhVoice;
+  window.speechSynthesis.speak(u);
+}
+
+if("speechSynthesis" in window){
+  window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+}
+
+function beep(freq=760, duration=0.08, volume=0.08){
+  if(!audioCtx || !soundEnabled) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = "sine";
+  osc.frequency.value = freq;
+  gain.gain.setValueAtTime(0.0001, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(volume, audioCtx.currentTime + 0.012);
+  gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.start();
+  osc.stop(audioCtx.currentTime + duration);
+}
+
+function finishBell(){
+  if(!soundEnabled) return;
+  initAudio();
+  const notes = [[880,0,.16,.16],[1175,.20,.16,.16],[1568,.40,.48,.17]];
+  notes.forEach(([freq,start,duration,vol])=>{
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(freq, audioCtx.currentTime + start);
+    gain.gain.setValueAtTime(0.0001, audioCtx.currentTime + start);
+    gain.gain.exponentialRampToValueAtTime(vol, audioCtx.currentTime + start + 0.015);
+    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + start + duration);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(audioCtx.currentTime + start);
+    osc.stop(audioCtx.currentTime + start + duration);
+  });
+  setTimeout(()=>speak("开始下一组"), 650);
+  if(navigator.vibrate) navigator.vibrate([180,80,180]);
+}
+
+function coachCue(sec){
+  const elapsed = selected - sec;
+
+  if(selected === 60){
+    if(elapsed === 20) say("调整呼吸");
+    if(elapsed === 40) say("准备下一组");
+    if(sec === 10) say("还有十秒");
+    if(sec === 5) say("还有五秒");
+  }
+
+  if(selected === 90){
+    if(elapsed === 30) say("调整呼吸");
+    if(elapsed === 60) say("准备下一组");
+    if(sec === 10) say("还有十秒");
+    if(sec === 5) say("还有五秒");
+  }
+
+  if(sec === 3) say("三");
+  if(sec === 2) say("二");
+  if(sec === 1) say("一");
+
+  if(sec <= 10 && sec > 0){
+    if(sec > 5){
+      beep(650, .07, .055);
+    }else if(sec > 2){
+      beep(820, .08, .075);
+      setTimeout(()=>beep(820,.05,.055), 130);
+    }else{
+      beep(980, .08, .095);
+      setTimeout(()=>beep(980,.05,.075), 120);
+      setTimeout(()=>beep(980,.05,.075), 240);
+    }
+  }
+}
+
+function say(text){
+  document.getElementById("voiceText").textContent = text;
+  speak(text);
+}
+
+function selectDuration(sec){
+  selected = sec;
+  remaining = sec;
+  lastSecond = sec;
+  running = false;
+  clearInterval(timer);
+  currentAction = "";
+
+  document.getElementById("mode60").classList.toggle("active", sec === 60);
+  document.getElementById("mode90").classList.toggle("active", sec === 90);
+  document.querySelectorAll(".action").forEach(b=>b.classList.remove("active"));
+
+  document.getElementById("startBtn").textContent = "开始";
+  document.getElementById("startBtn").className = "round start";
+  document.getElementById("status").textContent = "准备开始";
+  document.getElementById("phase").textContent = sec + " 秒休息";
+  document.getElementById("voiceText").textContent = "准备";
+  render();
+}
+
+function selectAction(name, sec){
+  currentAction = name;
+  selectDuration(sec);
+  currentAction = name;
+  document.querySelectorAll(".action").forEach(b=>{
+    b.classList.toggle("active", b.textContent.includes(name));
+  });
+  document.getElementById("phase").textContent = name + "｜休息 " + sec + " 秒";
+}
+
+function toggleSound(){
+  soundEnabled = !soundEnabled;
+  document.getElementById("soundSwitch").classList.toggle("on", soundEnabled);
+  if(!soundEnabled && "speechSynthesis" in window) window.speechSynthesis.cancel();
+}
+
+function toggleTimer(){
+  initAudio();
+
+  if(running){
+    running = false;
+    clearInterval(timer);
+    if("speechSynthesis" in window) window.speechSynthesis.cancel();
+    document.getElementById("startBtn").textContent = "继续";
+    document.getElementById("startBtn").className = "round start";
+    document.getElementById("status").textContent = "已暂停";
+    return;
+  }
+
+  running = true;
+  lastSecond = remaining;
+  document.getElementById("startBtn").textContent = "暂停";
+  document.getElementById("startBtn").className = "round pause";
+  document.getElementById("status").textContent = "计时中";
+  say("开始休息");
+
+  const startTime = Date.now();
+  const baseRemaining = remaining;
+
+  clearInterval(timer);
+  timer = setInterval(()=>{
+    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+    remaining = Math.max(baseRemaining - elapsed, 0);
+
+    if(remaining !== lastSecond){
+      lastSecond = remaining;
+      coachCue(remaining);
+    }
+
+    render();
+
+    if(remaining <= 0){
+      clearInterval(timer);
+      running = false;
+      document.getElementById("startBtn").textContent = "开始";
+      document.getElementById("startBtn").className = "round start";
+      document.getElementById("status").textContent = "时间到";
+      document.getElementById("phase").textContent = "开始下一组";
+      document.getElementById("voiceText").textContent = "开始";
+      finishBell();
+    }
+  }, 100);
+}
+
+function resetTimer(){
+  running = false;
+  clearInterval(timer);
+  if("speechSynthesis" in window) window.speechSynthesis.cancel();
+
+  remaining = selected;
+  lastSecond = selected;
+
+  document.getElementById("startBtn").textContent = "开始";
+  document.getElementById("startBtn").className = "round start";
+  document.getElementById("status").textContent = "准备开始";
+  document.getElementById("phase").textContent = currentAction ? currentAction + "｜休息 " + selected + " 秒" : selected + " 秒休息";
+  document.getElementById("voiceText").textContent = "准备";
+  render();
+}
+
+function render(){
+  const m = String(Math.floor(remaining / 60)).padStart(2,"0");
+  const s = String(remaining % 60).padStart(2,"0");
+  document.getElementById("time").textContent = `${m}:${s}`;
+
+  const pct = remaining / selected;
+  progress.style.strokeDashoffset = circumference * (1 - pct);
+
+  if(running){
+    if(remaining > 10){
+      document.getElementById("phase").textContent = currentAction ? currentAction + "｜恢复中" : "恢复中";
+    }else if(remaining > 0){
+      document.getElementById("phase").textContent = "准备下一组";
+    }
+  }
+}
+
+render();
+</script>
+</body>
+</html>
